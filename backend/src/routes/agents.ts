@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { pool } from '../db/init';
+import { supabase } from '../db/init';
 
 export const agentRouter = Router();
 
@@ -17,20 +17,52 @@ const agentSchema = z.object({
 agentRouter.post('/', async (req, res) => {
   try {
     const d = agentSchema.parse(req.body);
-    const result = await pool.query(
-      `INSERT INTO agents (wallet_address, name, bio, skills, owner_name, owner_contact)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       ON CONFLICT (wallet_address) DO UPDATE SET
-         name=EXCLUDED.name, bio=EXCLUDED.bio, skills=EXCLUDED.skills,
-         owner_name=EXCLUDED.owner_name, owner_contact=EXCLUDED.owner_contact,
-         updated_at=NOW()
-       RETURNING *`,
-      [d.walletAddress, d.name, d.bio || null, d.skills || [], d.ownerName || null, d.ownerContact || null]
-    );
-    res.json({ agent: result.rows[0] });
+
+    // Try to find existing agent
+    const { data: existing } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('wallet_address', d.walletAddress)
+      .single();
+
+    let agent;
+    if (existing) {
+      const { data, error } = await supabase
+        .from('agents')
+        .update({
+          name: d.name,
+          bio: d.bio || null,
+          skills: d.skills || [],
+          owner_name: d.ownerName || null,
+          owner_contact: d.ownerContact || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('wallet_address', d.walletAddress)
+        .select()
+        .single();
+      if (error) throw error;
+      agent = data;
+    } else {
+      const { data, error } = await supabase
+        .from('agents')
+        .insert({
+          wallet_address: d.walletAddress,
+          name: d.name,
+          bio: d.bio || null,
+          skills: d.skills || [],
+          owner_name: d.ownerName || null,
+          owner_contact: d.ownerContact || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      agent = data;
+    }
+
+    res.json({ agent });
   } catch (error: any) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.errors });
-    if (error.code === 'ECONNREFUSED') return res.status(503).json({ error: 'Database not connected' });
+    console.error('Agent error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -38,9 +70,13 @@ agentRouter.post('/', async (req, res) => {
 // Get agent by wallet
 agentRouter.get('/:walletAddress', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM agents WHERE wallet_address=$1', [req.params.walletAddress]);
-    if (!result.rows[0]) return res.status(404).json({ error: 'Agent not found' });
-    res.json({ agent: result.rows[0] });
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('wallet_address', req.params.walletAddress)
+      .single();
+    if (error || !data) return res.status(404).json({ error: 'Agent not found' });
+    res.json({ agent: data });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -49,10 +85,15 @@ agentRouter.get('/:walletAddress', async (req, res) => {
 // List agents
 agentRouter.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM agents WHERE is_available=true ORDER BY created_at DESC LIMIT 100');
-    res.json({ agents: result.rows });
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('is_available', true)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    res.json({ agents: data || [] });
   } catch (error: any) {
-    if (error.code === 'ECONNREFUSED') return res.json({ agents: [] });
-    res.status(500).json({ error: error.message });
+    res.json({ agents: [] });
   }
 });

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { pool } from '../db/init';
+import { supabase } from '../db/init';
 
 export const intentRouter = Router();
 
@@ -19,47 +19,76 @@ const createSchema = z.object({
 intentRouter.post('/', async (req, res) => {
   try {
     const d = createSchema.parse(req.body);
-    const result = await pool.query(
-      `INSERT INTO intents (poster_wallet, poster_name, title, description, category, urgency, budget, requirements)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [d.posterWallet, d.posterName || null, d.title, d.description, d.category, d.urgency || 'medium', d.budget || null, d.requirements || []]
-    );
-    res.status(201).json({ intent: result.rows[0] });
+    const { data, error } = await supabase
+      .from('intents')
+      .insert({
+        poster_wallet: d.posterWallet,
+        poster_name: d.posterName || null,
+        title: d.title,
+        description: d.description,
+        category: d.category,
+        urgency: d.urgency || 'medium',
+        budget: d.budget || null,
+        requirements: d.requirements || [],
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json({ intent: data });
   } catch (error: any) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.errors });
-    if (error.code === 'ECONNREFUSED') return res.status(503).json({ error: 'Database not connected' });
+    console.error('Intent error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// List intents (with optional filters)
+// List intents
 intentRouter.get('/', async (req, res) => {
   try {
     const { status, category, wallet } = req.query;
-    let q = `SELECT i.*, (SELECT COUNT(*) FROM matches m WHERE m.intent_id=i.id) as match_count FROM intents i WHERE 1=1`;
-    const params: any[] = [];
-    let n = 1;
-    if (status) { q += ` AND i.status=$${n++}`; params.push(status); }
-    if (category) { q += ` AND i.category=$${n++}`; params.push(category); }
-    if (wallet) { q += ` AND i.poster_wallet=$${n++}`; params.push(wallet); }
-    q += ` ORDER BY i.created_at DESC LIMIT 100`;
-    const result = await pool.query(q, params);
-    res.json({ intents: result.rows });
+    let query = supabase.from('intents').select('*').order('created_at', { ascending: false }).limit(100);
+
+    if (status) query = query.eq('status', status as string);
+    if (category) query = query.eq('category', category as string);
+    if (wallet) query = query.eq('poster_wallet', wallet as string);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Get match counts
+    const intents = await Promise.all(
+      (data || []).map(async (intent) => {
+        const { count } = await supabase
+          .from('matches')
+          .select('*', { count: 'exact', head: true })
+          .eq('intent_id', intent.id);
+        return { ...intent, match_count: count || 0 };
+      })
+    );
+
+    res.json({ intents });
   } catch (error: any) {
-    if (error.code === 'ECONNREFUSED') return res.json({ intents: [] });
-    res.status(500).json({ error: error.message });
+    console.error('List intents error:', error);
+    res.json({ intents: [] });
   }
 });
 
-// Get single intent with match count
+// Get single intent
 intentRouter.get('/:id', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT i.*, (SELECT COUNT(*) FROM matches m WHERE m.intent_id=i.id) as match_count
-       FROM intents i WHERE i.id=$1`, [req.params.id]
-    );
-    if (!result.rows[0]) return res.status(404).json({ error: 'Intent not found' });
-    res.json({ intent: result.rows[0] });
+    const { data, error } = await supabase
+      .from('intents')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (error || !data) return res.status(404).json({ error: 'Intent not found' });
+
+    const { count } = await supabase
+      .from('matches')
+      .select('*', { count: 'exact', head: true })
+      .eq('intent_id', data.id);
+
+    res.json({ intent: { ...data, match_count: count || 0 } });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -69,12 +98,17 @@ intentRouter.get('/:id', async (req, res) => {
 intentRouter.patch('/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['open', 'matched', 'closed'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
-    const result = await pool.query(
-      'UPDATE intents SET status=$1, updated_at=NOW() WHERE id=$2 RETURNING *', [status, req.params.id]
-    );
-    if (!result.rows[0]) return res.status(404).json({ error: 'Intent not found' });
-    res.json({ intent: result.rows[0] });
+    if (!['open', 'matched', 'closed'].includes(status))
+      return res.status(400).json({ error: 'Invalid status' });
+
+    const { data, error } = await supabase
+      .from('intents')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error || !data) return res.status(404).json({ error: 'Intent not found' });
+    res.json({ intent: data });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
