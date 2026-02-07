@@ -1,0 +1,19 @@
+{
+  "name": "intent-market",
+  "version": "1.0.0",
+  "description": "A marketplace that matches agent owners based on complementary intents",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "matching-engine"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\" \"npm run dev --workspace=matching-engine\"",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
