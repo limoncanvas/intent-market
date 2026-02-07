@@ -1,89 +1,84 @@
 /**
  * Shared types for Intent Market
+ *
+ * Flow:
+ *   1. Human posts an Intent (what they need)
+ *   2. Intent is broadcast to agents (privately)
+ *   3. Agents respond with a Match (why they/their owner can deliver)
+ *   4. Human reviews matches, sees "why matched", accepts or passes
+ *   5. Human contacts agent's owner or hires agent directly
  */
+
+// ── Agents ──────────────────────────────────────────────────────────
 
 export interface Agent {
   id: number;
   wallet_address: string;
   name: string;
-  description?: string;
-  capabilities?: string[];
+  bio?: string;
+  skills: string[];
+  owner_name?: string;
+  owner_contact?: string;
+  avatar_url?: string;
+  is_available: boolean;
   created_at: string;
   updated_at: string;
 }
+
+// ── Intents ─────────────────────────────────────────────────────────
+
+export type IntentStatus = 'open' | 'matched' | 'closed';
+export type IntentUrgency = 'low' | 'medium' | 'high' | 'asap';
 
 export interface Intent {
   id: number;
-  agent_id: number;
+  poster_wallet: string;
+  poster_name?: string;
   title: string;
   description: string;
-  category?: string;
-  requirements?: string[];
+  category: string;
+  urgency: IntentUrgency;
+  budget?: string;
+  requirements: string[];
   status: IntentStatus;
-  solana_tx_signature?: string;
-  openclaw_intent_id?: string;
-  openclaw_synced_at?: string;
-  is_openclaw?: boolean;
+  match_count?: number;
   created_at: string;
   updated_at: string;
-  // Joined fields
-  agent_name?: string;
-  wallet_address?: string;
 }
 
-export type IntentStatus = 'active' | 'fulfilled' | 'cancelled';
+// ── Matches ─────────────────────────────────────────────────────────
+
+export type MatchType = 'agent_can_deliver' | 'owner_suitable' | 'both';
+export type MatchStatus = 'proposed' | 'accepted' | 'declined' | 'contacted';
 
 export interface Match {
   id: number;
   intent_id: number;
-  matched_intent_id: number;
+  agent_id: number;
+  match_type: MatchType;
   match_score: number;
+  match_reason: string;          // "Why this agent/owner is a good fit"
+  agent_message?: string;        // Optional message from the agent
   status: MatchStatus;
   created_at: string;
   updated_at: string;
   // Joined fields
   intent_title?: string;
-  intent_description?: string;
-  matched_intent_title?: string;
-  matched_intent_description?: string;
   agent_name?: string;
-  matched_agent_name?: string;
+  agent_bio?: string;
+  agent_skills?: string[];
+  owner_name?: string;
+  owner_contact?: string;
 }
 
-export type MatchStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
-
-export interface OpenClawIntent {
-  id: string;
-  title: string;
-  description: string;
-  category?: string;
-  requirements?: string[];
-  agent_wallet: string;
-  agent_name?: string;
-  status: 'active' | 'fulfilled' | 'cancelled';
-  created_at: string;
-  updated_at: string;
-  metadata?: Record<string, any>;
-  match_score?: number;
-}
+// ── API ─────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
   data?: T;
-  error?: string | Array<{ message: string; path?: string }>;
+  error?: string;
 }
 
 export interface PaginationParams {
   limit?: number;
   offset?: number;
-}
-
-export interface IntentFilters extends PaginationParams {
-  status?: IntentStatus;
-  category?: string;
-  agentId?: number;
-}
-
-export interface MatchFilters extends PaginationParams {
-  status?: MatchStatus;
-  intentId?: number;
 }

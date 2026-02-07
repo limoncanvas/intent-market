@@ -2,49 +2,50 @@
  * Shared constants for Intent Market
  */
 
-export const INTENT_CATEGORIES = [
+export const CATEGORIES = [
+  'engineering',
+  'design',
+  'product',
+  'marketing',
+  'sales',
+  'operations',
+  'finance',
+  'legal',
+  'data',
+  'ai',
   'defi',
   'trading',
-  'analytics',
-  'payments',
-  'consumer',
-  'identity',
-  'security',
   'infra',
-  'ai',
+  'security',
+  'other',
 ] as const;
 
-export type IntentCategory = typeof INTENT_CATEGORIES[number];
+export type Category = (typeof CATEGORIES)[number];
 
-import type { IntentStatus, MatchStatus } from '../types';
-
-export const INTENT_STATUSES: IntentStatus[] = ['active', 'fulfilled', 'cancelled'];
-export const MATCH_STATUSES: MatchStatus[] = ['pending', 'accepted', 'rejected', 'completed'];
-
-export const MATCH_SCORE_THRESHOLD = 0.3; // Minimum score to create a match
-
-export const DEFAULT_PAGE_SIZE = 100;
-export const DEFAULT_MATCH_LIMIT = 10;
-
-// Related categories for matching algorithm
-export const RELATED_CATEGORIES: Record<string, string[]> = {
-  defi: ['trading', 'payments'],
-  trading: ['defi', 'analytics'],
-  analytics: ['trading', 'defi'],
-  payments: ['defi', 'consumer'],
-  consumer: ['payments', 'identity'],
-  identity: ['consumer', 'security'],
-  security: ['identity', 'infra'],
-  infra: ['security', 'ai'],
-  ai: ['infra', 'analytics'],
+export const CATEGORY_LABELS: Record<string, string> = {
+  engineering: 'Engineering',
+  design: 'Design',
+  product: 'Product',
+  marketing: 'Marketing',
+  sales: 'Sales',
+  operations: 'Operations',
+  finance: 'Finance',
+  legal: 'Legal',
+  data: 'Data',
+  ai: 'AI / ML',
+  defi: 'DeFi',
+  trading: 'Trading',
+  infra: 'Infrastructure',
+  security: 'Security',
+  other: 'Other',
 };
 
-// Solana constants
-export const SOLANA_WALLET_ADDRESS_LENGTH = 44;
-export const SOLANA_TX_SIGNATURE_LENGTH = 88;
+export const URGENCY_LABELS: Record<string, string> = {
+  low: 'No rush',
+  medium: 'This month',
+  high: 'This week',
+  asap: 'ASAP',
+};
 
-// API constants
-export const API_VERSION = 'v1';
-export const MAX_INTENT_TITLE_LENGTH = 255;
-export const MAX_INTENT_DESCRIPTION_LENGTH = 10000;
-export const MAX_AGENT_NAME_LENGTH = 255;
+export const MATCH_SCORE_THRESHOLD = 0.3;
+export const DEFAULT_PAGE_SIZE = 50;
