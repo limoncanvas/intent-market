@@ -19,6 +19,8 @@ export default function Home() {
   const [intents, setIntents] = useState<any[]>([])
   const [selectedIntent, setSelectedIntent] = useState<any>(null)
   const [matches, setMatches] = useState<any[]>([])
+  const [negotiationLog, setNegotiationLog] = useState<any[]>([])
+  const [stats, setStats] = useState<{ agents: number; intents: number; matches: number }>({ agents: 0, intents: 0, matches: 0 })
   const [loading, setLoading] = useState(false)
   const [matchLoading, setMatchLoading] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null)
@@ -42,12 +44,19 @@ export default function Home() {
 
   const loadMatches = useCallback(async (intentId: number) => {
     setMatchLoading(true)
-    try { setMatches(await api.getMatches(intentId)) }
+    try {
+      setMatches(await api.getMatches(intentId))
+      setNegotiationLog(await api.getNegotiationLog(intentId))
+    }
     catch { showToast('Failed to load matches', 'error') }
     finally { setMatchLoading(false) }
   }, [showToast])
 
-  useEffect(() => { loadIntents() }, [loadIntents])
+  const loadStats = useCallback(async () => {
+    try { setStats(await api.getStats()) } catch {}
+  }, [])
+
+  useEffect(() => { loadIntents(); loadStats() }, [loadIntents, loadStats])
 
   const handlePostIntent = async () => {
     if (!publicKey || !form.title || !form.description || !form.category) return
@@ -105,6 +114,15 @@ export default function Home() {
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm mb-6">
           <Sparkles className="w-4 h-4" /> Powered by Solana
         </div>
+        {(stats.agents > 0 || stats.intents > 0) && (
+          <div className="flex items-center justify-center gap-6 text-sm text-gray-400 mb-4">
+            <span><strong className="text-white">{stats.agents}</strong> agents</span>
+            <span className="text-gray-600">·</span>
+            <span><strong className="text-white">{stats.intents}</strong> intents</span>
+            <span className="text-gray-600">·</span>
+            <span><strong className="text-white">{stats.matches}</strong> matches</span>
+          </div>
+        )}
         <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
           Post your intent.<br />Agents find the match.
         </h1>
@@ -313,6 +331,11 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Agent Negotiation Log */}
+        {negotiationLog.length > 0 && (
+          <NegotiationLogPanel log={negotiationLog} />
+        )}
+
         {matchLoading && matches.length === 0 ? (
           <div className="text-center py-12"><Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto" /></div>
         ) : matches.length === 0 ? (
@@ -471,6 +494,51 @@ function MatchCard({ match, onAction, delay }: { match: any; onAction: (id: numb
           </a>
         )}
       </div>
+    </div>
+  )
+}
+
+function NegotiationLogPanel({ log }: { log: any[] }) {
+  const [expanded, setExpanded] = useState(true)
+  const typeStyles: Record<string, string> = {
+    system: 'border-l-blue-500 bg-blue-500/5',
+    analysis: 'border-l-yellow-500 bg-yellow-500/5',
+    reasoning: 'border-l-purple-500 bg-purple-500/5',
+    decision: 'border-l-green-500 bg-green-500/5',
+  }
+  const typeLabels: Record<string, string> = {
+    system: 'BROADCAST',
+    analysis: 'ANALYZING',
+    reasoning: 'REASONING',
+    decision: 'DECISION',
+  }
+
+  return (
+    <div className="mb-6 bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      <button onClick={() => setExpanded(!expanded)} className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-purple-400" />
+          <span className="font-semibold">Agent Negotiation Log</span>
+          <span className="text-xs text-gray-500 ml-2">{log.length} events</span>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+      {expanded && (
+        <div className="px-5 pb-4 space-y-2 max-h-[400px] overflow-y-auto">
+          {log.map((entry, i) => (
+            <div key={i} className={`border-l-2 pl-4 py-2 rounded-r-lg ${typeStyles[entry.type] || ''} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono text-gray-500">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${entry.type === 'system' ? 'bg-blue-500/20 text-blue-300' : entry.type === 'analysis' ? 'bg-yellow-500/20 text-yellow-300' : entry.type === 'reasoning' ? 'bg-purple-500/20 text-purple-300' : 'bg-green-500/20 text-green-300'}`}>
+                  {typeLabels[entry.type] || entry.type}
+                </span>
+                <span className="text-xs font-semibold text-gray-300">{entry.agent}</span>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">{entry.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

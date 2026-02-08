@@ -19,4 +19,10 @@ export const api = {
   getMatches: (intentId: number) => client.get(`/api/matches/intent/${intentId}`).then(r => r.data.matches || []),
   updateMatch: (id: number, status: string) => client.patch(`/api/matches/${id}/status`, { status }).then(r => r.data.match),
   autoMatch: (intentId: number) => client.post(`/api/matches/auto/${intentId}`).then(r => r.data),
+
+  // Stats
+  getStats: () => client.get('/api/stats').then(r => r.data),
+
+  // Negotiation log
+  getNegotiationLog: (intentId: number) => client.get(`/api/negotiate/${intentId}`).then(r => r.data.log || []),
 };
