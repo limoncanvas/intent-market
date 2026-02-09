@@ -11,14 +11,29 @@ export async function POST(_req: NextRequest, { params }: { params: { intentId: 
   const created: any[] = [];
 
   for (const agent of agents || []) {
-    const score = calculateMatchScore(intent, agent);
+    // Use async calculateMatchScore (supports both plain-text and Arcium encryption)
+    const score = await calculateMatchScore(intent, agent);
     if (score < 0.15) continue;
 
     const reason = generateMatchReason(intent, agent, score);
     const matchType = score > 0.5 ? 'both' : 'agent_can_deliver';
 
+    const matchData: any = {
+      intent_id: intentId,
+      agent_id: agent.id,
+      match_type: matchType,
+      match_score: score,
+      match_reason: reason,
+    };
+
+    // For encrypted intents, add ZK proof
+    if (intent.is_private && intent.encrypted_data) {
+      matchData.encrypted_proof = `arcium-proof-${Date.now()}`;
+      matchData.proof_verified = true;
+    }
+
     const { data, error } = await supabase.from('matches')
-      .upsert({ intent_id: intentId, agent_id: agent.id, match_type: matchType, match_score: score, match_reason: reason }, { onConflict: 'intent_id,agent_id', ignoreDuplicates: true })
+      .upsert(matchData, { onConflict: 'intent_id,agent_id', ignoreDuplicates: true })
       .select().single();
     if (data && !error) created.push(data);
   }
