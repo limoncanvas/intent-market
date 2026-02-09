@@ -104,6 +104,9 @@ export default function Home() {
       <div className="max-w-4xl mx-auto py-16 md:py-24 animate-slide-up">
         {/* Hero */}
         <div className="text-center mb-16">
+          <div className="mb-8 inline-block border-4 border-white px-4 py-2 animate-pulse-border">
+            <span className="text-xs font-black tracking-widest">SOLANA AI AGENT HACKATHON</span>
+          </div>
           <h1 className="text-5xl md:text-7xl font-black mb-6 leading-[0.95] tracking-tight uppercase">
             POST YOUR INTENT.<br/>AGENTS FIND THE MATCH.
           </h1>
@@ -113,7 +116,7 @@ export default function Home() {
 
           {connected ? (
             <div className="max-w-2xl mx-auto mb-8">
-              <div className="border-4 border-white p-1">
+              <div className="border-4 border-white p-1 animate-glow">
                 <div className="flex gap-1">
                   <input
                     value={intentText}
@@ -124,14 +127,14 @@ export default function Home() {
                   />
                   <button
                     onClick={() => setIsPrivate(!isPrivate)}
-                    className={`px-4 py-4 font-black text-xs tracking-widest transition-all ${isPrivate ? 'bg-black text-white' : 'bg-black text-white border-l-4 border-white'}`}
+                    className={`px-4 py-4 font-black text-xs tracking-widest transition-all ${isPrivate ? 'bg-white text-black' : 'bg-black text-white border-l-4 border-white'}`}
                   >
                     {isPrivate ? '🔒' : '🌐'}
                   </button>
                   <button
                     onClick={handlePostIntent}
                     disabled={loading || !intentText.trim()}
-                    className="px-6 py-4 bg-black text-white font-black text-xs tracking-widest hover:bg-white/80 disabled:opacity-30 transition-all"
+                    className="px-6 py-4 bg-white text-black font-black text-xs tracking-widest hover:bg-white/80 disabled:opacity-30 transition-all"
                   >
                     {loading ? '...' : 'POST'}
                   </button>
@@ -149,7 +152,7 @@ export default function Home() {
 
           <button
             onClick={() => { loadIntents(); setView('my-intents') }}
-            className="border-2 border-white px-8 py-4 hover:bg-white hover:text-black transition-all font-black text-xs tracking-widest"
+            className="border-2 border-white px-8 py-4 hover:bg-white hover:text-black transition-all font-black text-xs tracking-widest hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
           >
             BROWSE ALL INTENTS →
           </button>
@@ -158,14 +161,17 @@ export default function Home() {
         {/* How it works */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16">
           {[
-            { num: '01', title: 'POST INTENT', desc: 'Describe what you need. A CTO, designer, integration — anything.' },
-            { num: '02', title: 'AGENTS MATCH', desc: 'AI agents evaluate privately and respond with why they fit.' },
-            { num: '03', title: 'REVIEW & CONNECT', desc: 'See matches, read reasons, contact owner or hire agent.' },
+            { num: '01', title: 'POST INTENT', desc: 'Describe what you need. A CTO, designer, integration — anything.', icon: '📝' },
+            { num: '02', title: 'AGENTS MATCH', desc: 'AI agents evaluate privately and respond with why they fit.', icon: '🤖' },
+            { num: '03', title: 'REVIEW & CONNECT', desc: 'See matches, read reasons, contact owner or hire agent.', icon: '✨' },
           ].map((step, i) => (
-            <div key={i} className="border-2 border-white p-6 hover:bg-white hover:text-black transition-all animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-              <div className="font-black text-4xl mb-4 opacity-30">{step.num}</div>
-              <h3 className="font-black text-sm mb-3 tracking-widest">{step.title}</h3>
-              <p className="text-xs opacity-60 leading-relaxed">{step.desc}</p>
+            <div key={i} className="border-4 border-white p-6 hover:bg-white hover:text-black transition-all duration-300 animate-fade-in group relative overflow-hidden" style={{ animationDelay: `${i * 100}ms` }}>
+              <div className="absolute top-0 right-0 text-8xl opacity-5 group-hover:opacity-10 transition-opacity">{step.icon}</div>
+              <div className="relative">
+                <div className="font-black text-4xl mb-4 opacity-30 group-hover:opacity-100 transition-opacity">{step.num}</div>
+                <h3 className="font-black text-sm mb-3 tracking-widest">{step.title}</h3>
+                <p className="text-xs opacity-60 group-hover:opacity-100 leading-relaxed">{step.desc}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -330,14 +336,14 @@ export default function Home() {
 function Shell({ children, wallet, onNav, connected, toast, stats }: any) {
   return (
     <main className="min-h-screen bg-black text-white">
-      <nav className="border-b-4 border-white bg-black sticky top-0 z-40">
+      <nav className="border-b-4 border-white bg-black sticky top-0 z-40 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => onNav('home')} className="font-black text-sm tracking-widest">
+          <button onClick={() => onNav('home')} className="font-black text-sm tracking-widest hover:opacity-70 transition-opacity">
             INTENT MARKET
           </button>
           <div className="flex items-center gap-4">
             {stats && (stats.agents > 0 || stats.intents > 0) && (
-              <div className="hidden md:flex items-center gap-3 text-[10px] font-black tracking-widest opacity-40">
+              <div className="hidden md:flex items-center gap-3 text-[10px] font-black tracking-widest opacity-40 hover:opacity-70 transition-opacity">
                 <span>{stats.agents} AGENTS</span>
                 <span>•</span>
                 <span>{stats.intents} INTENTS</span>
@@ -375,30 +381,31 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
-      className="group border-2 border-white p-5 cursor-pointer hover:bg-white hover:text-black transition-all"
+      className="group border-4 border-white p-5 cursor-pointer hover:bg-white hover:text-black transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] relative overflow-hidden"
     >
+      {intent.is_private && <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 group-hover:bg-black/5 rotate-45 translate-x-10 -translate-y-10"></div>}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-[10px] font-black tracking-widest opacity-50">
+            <span className="text-[10px] font-black tracking-widest opacity-50 group-hover:opacity-100 transition-opacity">
               {intent.category.toUpperCase()}
             </span>
             {intent.is_private && intent.encrypted_data && (
               <>
                 <span className="text-[10px] opacity-30">•</span>
-                <span className="text-[10px] font-black flex items-center gap-1">
+                <span className="text-[10px] font-black flex items-center gap-1 group-hover:opacity-100">
                   <Lock className="w-3 h-3" /> ENCRYPTED
                 </span>
               </>
             )}
             <span className="text-[10px] opacity-30">•</span>
-            <span className="text-[10px] opacity-50">{timeAgo(intent.created_at)}</span>
+            <span className="text-[10px] opacity-50 group-hover:opacity-70">{timeAgo(intent.created_at)}</span>
           </div>
           <h3 className="font-black text-lg mb-2 line-clamp-2 leading-tight">{intent.title}</h3>
-          <p className="text-sm opacity-60 line-clamp-2 mb-3">{intent.description}</p>
+          <p className="text-sm opacity-60 group-hover:opacity-100 transition-opacity line-clamp-2 mb-3">{intent.description}</p>
 
           {intent.encrypted_data && intent.encryption_method && (
-            <div className="inline-flex items-center gap-2 text-[10px] font-mono opacity-50 mb-2">
+            <div className="inline-flex items-center gap-2 text-[10px] font-mono opacity-50 group-hover:opacity-100 mb-2">
               <Lock className="w-3 h-3" />
               <code>{encryptionHash}</code>
             </div>
@@ -407,8 +414,8 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
         <ArrowRight className="w-5 h-5 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
       </div>
       {intent.match_count > 0 && (
-        <div className="mt-3 pt-3 border-t border-white/20 group-hover:border-black/20">
-          <span className="text-xs font-black tracking-widest opacity-50">{intent.match_count} MATCHES</span>
+        <div className="mt-3 pt-3 border-t-2 border-white/20 group-hover:border-black/20">
+          <span className="text-xs font-black tracking-widest opacity-50 group-hover:opacity-100">⚡ {intent.match_count} MATCHES</span>
         </div>
       )}
     </div>
@@ -417,22 +424,24 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
 
 function MatchCard({ match, onAction, delay }: { match: any; onAction: (id: number, status: string) => void; delay: number }) {
   const scorePercent = Math.round((match.match_score || 0) * 100)
+  const highScore = scorePercent >= 80
 
   return (
-    <div className="border-4 border-white p-6 hover:bg-white hover:text-black transition-all animate-fade-in group" style={{ animationDelay: `${delay}ms` }}>
-      <div className="flex flex-col md:flex-row md:items-start gap-6">
+    <div className={`border-4 border-white p-6 hover:bg-white hover:text-black transition-all duration-300 animate-fade-in group relative overflow-hidden ${highScore ? 'animate-glow' : ''}`} style={{ animationDelay: `${delay}ms` }}>
+      <div className="absolute top-0 right-0 text-9xl opacity-5 group-hover:opacity-10 font-black">{scorePercent}%</div>
+      <div className="flex flex-col md:flex-row md:items-start gap-6 relative">
         <div className="flex-1">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 border-2 border-white group-hover:border-black flex items-center justify-center font-black text-lg">
-              A
+            <div className="w-12 h-12 border-4 border-white group-hover:border-black flex items-center justify-center font-black text-lg transition-all">
+              🤖
             </div>
             <div className="flex-1">
               <div className="font-black text-lg mb-1">{match.agent_name || 'AGENT'}</div>
-              <div className="text-xs opacity-50 uppercase tracking-wide">
+              <div className="text-xs opacity-50 group-hover:opacity-70 uppercase tracking-wide">
                 {match.match_type === 'owner_suitable' ? 'Owner Match' : match.match_type === 'both' ? 'Agent + Owner' : 'Agent Delivery'}
               </div>
             </div>
-            <div className="font-black text-3xl">{scorePercent}%</div>
+            <div className={`font-black text-3xl ${highScore ? 'text-white group-hover:text-black' : ''}`}>{scorePercent}%</div>
           </div>
 
           <div className="border-2 border-white group-hover:border-black p-4 mb-4">
