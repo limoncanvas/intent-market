@@ -41,6 +41,8 @@ export interface Intent {
   budget?: string;
   requirements: string[];
   is_private: boolean;
+  /** Arcium-encrypted payload (JSON string) when is_private is true */
+  encrypted_data?: string;
   status: IntentStatus;
   match_count?: number;
   created_at: string;

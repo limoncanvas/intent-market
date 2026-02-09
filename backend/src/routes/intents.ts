@@ -14,6 +14,7 @@ const createSchema = z.object({
   budget: z.string().optional(),
   requirements: z.array(z.string()).optional(),
   isPrivate: z.boolean().optional(),
+  encryptedData: z.string().optional(),
 });
 
 // Post a new intent
@@ -32,6 +33,7 @@ intentRouter.post('/', async (req, res) => {
         budget: d.budget || null,
         requirements: d.requirements || [],
         is_private: d.isPrivate || false,
+        encrypted_data: d.encryptedData || null,
       })
       .select()
       .single();

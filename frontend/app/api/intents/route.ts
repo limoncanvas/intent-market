@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { posterWallet, posterName, title, description, category, urgency, budget, requirements, isPrivate } = body;
+  const { posterWallet, posterName, title, description, category, urgency, budget, requirements, isPrivate, encryptedData } = body;
   if (!posterWallet || !title || !description || !category) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
 
   const { data, error } = await supabase.from('intents')
-    .insert({ poster_wallet: posterWallet, poster_name: posterName || null, title, description, category, urgency: urgency || 'medium', budget: budget || null, requirements: requirements || [], is_private: isPrivate || false })
+    .insert({ poster_wallet: posterWallet, poster_name: posterName || null, title, description, category, urgency: urgency || 'medium', budget: budget || null, requirements: requirements || [], is_private: isPrivate || false, encrypted_data: encryptedData || null })
     .select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ intent: data }, { status: 201 });

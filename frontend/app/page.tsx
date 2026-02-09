@@ -1,21 +1,22 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { api } from '@/lib/api'
 import { categoryColor, timeAgo } from '@/lib/constants'
+import { deriveEncryptionKey, encryptText, decryptText, type EncryptedPayload } from '@/lib/arcium'
 import {
   Search, Plus, Sparkles, Filter, Loader2, ArrowRight, Clock,
   Users, Zap, ChevronRight, X, Target, MessageSquare, User,
   CheckCircle, XCircle, Mail, Briefcase, Star, ArrowLeft, Tag,
-  Lock, Globe, Eye, EyeOff
+  Lock, Globe, Eye, EyeOff, Shield, ShieldCheck
 } from 'lucide-react'
 
 type View = 'home' | 'my-intents' | 'intent-detail'
 
 export default function Home() {
-  const { publicKey, connected } = useWallet()
+  const { publicKey, connected, signMessage } = useWallet()
   const [view, setView] = useState<View>('home')
   const [intents, setIntents] = useState<any[]>([])
   const [selectedIntent, setSelectedIntent] = useState<any>(null)
@@ -29,6 +30,17 @@ export default function Home() {
   // Post intent form
   const [intentText, setIntentText] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
+
+  // Arcium encryption key (derived from wallet signature)
+  const encKeyRef = useRef<Uint8Array | null>(null)
+
+  const getEncryptionKey = useCallback(async (): Promise<Uint8Array> => {
+    if (encKeyRef.current) return encKeyRef.current
+    if (!signMessage) throw new Error('Wallet does not support message signing')
+    const key = await deriveEncryptionKey(signMessage)
+    encKeyRef.current = key
+    return key
+  }, [signMessage])
 
   const showToast = useCallback((msg: string, type = 'success') => {
     setToast({ msg, type })
@@ -64,24 +76,54 @@ export default function Home() {
     if (!publicKey || !intentText.trim()) return
     setLoading(true)
     try {
+      let encryptedData: string | undefined
+      if (isPrivate) {
+        try {
+          const key = await getEncryptionKey()
+          const payload = encryptText(intentText.trim(), key)
+          encryptedData = JSON.stringify(payload)
+        } catch {
+          showToast('Encryption failed — sign the message to enable Arcium encryption', 'error')
+          setLoading(false)
+          return
+        }
+      }
+
+      const displayTitle = isPrivate ? '[Arcium Encrypted]' : intentText.trim()
+      const displayDesc = isPrivate ? '[This intent is encrypted with Arcium — only the poster can decrypt it]' : intentText.trim()
+
       await api.createIntent({
         posterWallet: publicKey.toBase58(),
         posterName: publicKey.toBase58().slice(0, 8),
-        title: intentText.trim(),
-        description: intentText.trim(),
+        title: displayTitle,
+        description: displayDesc,
         category: 'other',
         isPrivate,
+        encryptedData,
       })
       setIntentText('')
       setIsPrivate(false)
-      showToast(isPrivate ? 'Intent posted privately!' : 'Intent posted! Agents will start matching.')
+      showToast(isPrivate ? 'Intent posted with Arcium encryption!' : 'Intent posted! Agents will start matching.')
       loadIntents(publicKey.toBase58())
     } catch (e: any) { showToast(e.response?.data?.error || 'Failed to post intent', 'error') }
     finally { setLoading(false) }
   }
 
+  const tryDecryptIntent = useCallback(async (intent: any): Promise<any> => {
+    if (!intent.is_private || !intent.encrypted_data) return intent
+    try {
+      const key = await getEncryptionKey()
+      const payload: EncryptedPayload = JSON.parse(intent.encrypted_data)
+      const plaintext = decryptText(payload, key)
+      return { ...intent, title: plaintext, description: plaintext, _decrypted: true }
+    } catch {
+      return intent
+    }
+  }, [getEncryptionKey])
+
   const openIntent = async (intent: any) => {
-    setSelectedIntent(intent)
+    const decrypted = await tryDecryptIntent(intent)
+    setSelectedIntent(decrypted)
     setView('intent-detail')
     loadMatches(intent.id)
   }
@@ -112,7 +154,7 @@ export default function Home() {
       {/* Hero */}
       <div className="text-center py-16 md:py-24 animate-slide-up">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm mb-6">
-          <Sparkles className="w-4 h-4" /> Powered by Solana
+          <Sparkles className="w-4 h-4" /> Powered by Solana <span className="text-gray-500">·</span> <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> <span className="text-emerald-300">Arcium Privacy</span>
         </div>
         {(stats.agents > 0 || stats.intents > 0) && (
           <div className="flex items-center justify-center gap-6 text-sm text-gray-400 mb-4">
@@ -157,7 +199,7 @@ export default function Home() {
               </button>
             </div>
             <div className="mt-2 text-xs text-gray-500 text-center">
-              {isPrivate ? <span className="text-yellow-400/70">Private — only agents will see this, not listed publicly</span> : <span>Public — will appear in the intent directory</span>}
+              {isPrivate ? <span className="text-yellow-400/70 flex items-center justify-center gap-1"><Shield className="w-3 h-3" /> Arcium encrypted — only you can decrypt, not listed publicly</span> : <span>Public — will appear in the intent directory</span>}
             </div>
           </div>
         ) : (
@@ -274,6 +316,12 @@ export default function Home() {
                 <span className={`text-xs px-2 py-0.5 rounded-full ${selectedIntent.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'}`}>
                   {selectedIntent.status}
                 </span>
+                {selectedIntent.is_private && selectedIntent.encrypted_data && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${selectedIntent._decrypted ? 'bg-emerald-500/20 text-emerald-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
+                    <ShieldCheck className="w-3 h-3" />
+                    {selectedIntent._decrypted ? 'Arcium Decrypted' : 'Arcium Encrypted'}
+                  </span>
+                )}
               </div>
               <h1 className="text-2xl font-bold mb-2">{selectedIntent.title}</h1>
               <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedIntent.description}</p>
@@ -371,7 +419,12 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
         <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${categoryColor[intent.category] || categoryColor.other}`}>
           {intent.category}
         </span>
-        {intent.is_private && <span className="text-xs text-yellow-400 font-medium flex items-center gap-0.5"><EyeOff className="w-3 h-3" /> Private</span>}
+        {intent.is_private && intent.encrypted_data && (
+          <span className="text-xs text-emerald-400 font-medium flex items-center gap-0.5"><ShieldCheck className="w-3 h-3" /> Arcium</span>
+        )}
+        {intent.is_private && !intent.encrypted_data && (
+          <span className="text-xs text-yellow-400 font-medium flex items-center gap-0.5"><EyeOff className="w-3 h-3" /> Private</span>
+        )}
         {intent.urgency === 'asap' && <span className="text-xs text-red-400 font-medium">ASAP</span>}
         {intent.urgency === 'high' && <span className="text-xs text-orange-400 font-medium">This week</span>}
       </div>
