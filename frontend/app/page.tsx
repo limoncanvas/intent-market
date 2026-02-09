@@ -4,14 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { api } from '@/lib/api'
-import { CATEGORIES, URGENCY, categoryColor, timeAgo } from '@/lib/constants'
+import { categoryColor, timeAgo } from '@/lib/constants'
 import {
   Search, Plus, Sparkles, Filter, Loader2, ArrowRight, Clock,
   Users, Zap, ChevronRight, X, Target, MessageSquare, User,
-  CheckCircle, XCircle, Mail, Briefcase, Star, ArrowLeft, Tag
+  CheckCircle, XCircle, Mail, Briefcase, Star, ArrowLeft, Tag,
+  Lock, Globe, Eye, EyeOff
 } from 'lucide-react'
 
-type View = 'home' | 'post' | 'my-intents' | 'intent-detail'
+type View = 'home' | 'my-intents' | 'intent-detail'
 
 export default function Home() {
   const { publicKey, connected } = useWallet()
@@ -26,7 +27,8 @@ export default function Home() {
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null)
 
   // Post intent form
-  const [form, setForm] = useState({ title: '', description: '', category: '', urgency: 'medium', budget: '', requirements: '' })
+  const [intentText, setIntentText] = useState('')
+  const [isPrivate, setIsPrivate] = useState(false)
 
   const showToast = useCallback((msg: string, type = 'success') => {
     setToast({ msg, type })
@@ -59,22 +61,20 @@ export default function Home() {
   useEffect(() => { loadIntents(); loadStats() }, [loadIntents, loadStats])
 
   const handlePostIntent = async () => {
-    if (!publicKey || !form.title || !form.description || !form.category) return
+    if (!publicKey || !intentText.trim()) return
     setLoading(true)
     try {
       await api.createIntent({
         posterWallet: publicKey.toBase58(),
         posterName: publicKey.toBase58().slice(0, 8),
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        urgency: form.urgency,
-        budget: form.budget || undefined,
-        requirements: form.requirements ? form.requirements.split(',').map(r => r.trim()).filter(Boolean) : undefined,
+        title: intentText.trim(),
+        description: intentText.trim(),
+        category: 'other',
+        isPrivate,
       })
-      setForm({ title: '', description: '', category: '', urgency: 'medium', budget: '', requirements: '' })
-      showToast('Intent posted! Agents will start matching.')
-      setView('my-intents')
+      setIntentText('')
+      setIsPrivate(false)
+      showToast(isPrivate ? 'Intent posted privately!' : 'Intent posted! Agents will start matching.')
       loadIntents(publicKey.toBase58())
     } catch (e: any) { showToast(e.response?.data?.error || 'Failed to post intent', 'error') }
     finally { setLoading(false) }
@@ -130,16 +130,44 @@ export default function Home() {
           Describe what you need — a co-founder, a developer, a service — and AI agents
           will privately match you with the right people or deliver the work themselves.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {connected ? (
-            <button onClick={() => setView('post')} className="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold text-lg flex items-center gap-2 justify-center transition-all hover:scale-105 animate-pulse-ring">
-              <Plus className="w-5 h-5" /> Post an Intent
-            </button>
-          ) : (
+        {connected ? (
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-2 focus-within:border-purple-500/50 transition-all">
+              <input
+                value={intentText}
+                onChange={e => setIntentText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handlePostIntent()}
+                placeholder='What do you need? e.g. "Looking for a CTO for my DeFi startup"'
+                className="flex-1 bg-transparent px-3 py-2 text-white placeholder-gray-500 outline-none text-sm"
+              />
+              <button
+                onClick={() => setIsPrivate(!isPrivate)}
+                title={isPrivate ? 'Private — hidden from public directory' : 'Public — visible in directory'}
+                className={`p-2 rounded-lg transition-all ${isPrivate ? 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+              >
+                {isPrivate ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={handlePostIntent}
+                disabled={loading || !intentText.trim()}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-all whitespace-nowrap"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Post
+              </button>
+            </div>
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              {isPrivate ? <span className="text-yellow-400/70">Private — only agents will see this, not listed publicly</span> : <span>Public — will appear in the intent directory</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
             <WalletMultiButton />
-          )}
-          <button onClick={() => { loadIntents(); setView('my-intents') }} className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold text-lg flex items-center gap-2 justify-center transition-all">
-            <Search className="w-5 h-5" /> Browse Intents
+          </div>
+        )}
+        <div className="flex justify-center mt-4">
+          <button onClick={() => { loadIntents(); setView('my-intents') }} className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold flex items-center gap-2 justify-center transition-all text-sm">
+            <Search className="w-4 h-4" /> Browse Intents
           </button>
         </div>
       </div>
@@ -180,63 +208,6 @@ export default function Home() {
     </Shell>
   )
 
-  // Post Intent
-  if (view === 'post') return (
-    <Shell wallet={<WalletMultiButton />} onNav={setView} connected={connected} toast={toast}>
-      <div className="max-w-2xl mx-auto animate-slide-up">
-        <button onClick={() => setView('home')} className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-        <h1 className="text-3xl font-bold mb-2">Post an Intent</h1>
-        <p className="text-gray-400 mb-8">Describe what you need. Agents will find the best match for you.</p>
-
-        <div className="space-y-5">
-          <Field label="What do you need?" required>
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-              placeholder='e.g. "Looking for a CTO co-founder for my DeFi startup"'
-              className="input" />
-          </Field>
-
-          <Field label="Describe in detail" required>
-            <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="What's the context? What skills, experience, or traits are you looking for? What does success look like?"
-              rows={5} className="input resize-none" />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Category" required>
-              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="input">
-                <option value="">Select...</option>
-                {CATEGORIES.map(c => <option key={c.value} value={c.value} className="bg-slate-800">{c.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Urgency">
-              <select value={form.urgency} onChange={e => setForm({ ...form, urgency: e.target.value })} className="input">
-                {URGENCY.map(u => <option key={u.value} value={u.value} className="bg-slate-800">{u.label}</option>)}
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Budget (optional)">
-            <input value={form.budget} onChange={e => setForm({ ...form, budget: e.target.value })}
-              placeholder='e.g. "$5k-10k" or "Equity" or "Negotiable"' className="input" />
-          </Field>
-
-          <Field label="Requirements (comma-separated, optional)">
-            <input value={form.requirements} onChange={e => setForm({ ...form, requirements: e.target.value })}
-              placeholder="e.g. Solana experience, 5+ years engineering, US timezone" className="input" />
-          </Field>
-
-          <button onClick={handlePostIntent} disabled={loading || !form.title || !form.description || !form.category}
-            className="w-full py-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all">
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-            {loading ? 'Posting...' : 'Post Intent'}
-          </button>
-        </div>
-      </div>
-    </Shell>
-  )
-
   // My Intents / Browse
   if (view === 'my-intents') return (
     <Shell wallet={<WalletMultiButton />} onNav={setView} connected={connected} toast={toast}>
@@ -249,7 +220,7 @@ export default function Home() {
             <h1 className="text-3xl font-bold">Intents</h1>
           </div>
           {connected && (
-            <button onClick={() => setView('post')} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold flex items-center gap-2 transition-all">
+            <button onClick={() => setView('home')} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold flex items-center gap-2 transition-all">
               <Plus className="w-4 h-4" /> Post Intent
             </button>
           )}
@@ -265,7 +236,7 @@ export default function Home() {
             <h3 className="text-xl font-bold mb-2">No intents yet</h3>
             <p className="text-gray-400 mb-6">Be the first to post what you need.</p>
             {connected && (
-              <button onClick={() => setView('post')} className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold transition-all">
+              <button onClick={() => setView('home')} className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold transition-all">
                 Post an Intent
               </button>
             )}
@@ -370,7 +341,7 @@ function Shell({ children, wallet, onNav, connected, toast }: any) {
           <div className="flex items-center gap-3">
             {connected && (
               <>
-                <button onClick={() => onNav('post')} className="hidden sm:flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                <button onClick={() => onNav('home')} className="hidden sm:flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
                   <Plus className="w-4 h-4" /> Post
                 </button>
                 <button onClick={() => onNav('my-intents')} className="hidden sm:flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
@@ -400,6 +371,7 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
         <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${categoryColor[intent.category] || categoryColor.other}`}>
           {intent.category}
         </span>
+        {intent.is_private && <span className="text-xs text-yellow-400 font-medium flex items-center gap-0.5"><EyeOff className="w-3 h-3" /> Private</span>}
         {intent.urgency === 'asap' && <span className="text-xs text-red-400 font-medium">ASAP</span>}
         {intent.urgency === 'high' && <span className="text-xs text-orange-400 font-medium">This week</span>}
       </div>
@@ -543,13 +515,3 @@ function NegotiationLogPanel({ log }: { log: any[] }) {
   )
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-300 mb-2">
-        {label} {required && <span className="text-red-400">*</span>}
-      </label>
-      {children}
-    </div>
-  )
-}

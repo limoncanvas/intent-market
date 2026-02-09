@@ -40,6 +40,7 @@ export interface Intent {
   urgency: IntentUrgency;
   budget?: string;
   requirements: string[];
+  is_private: boolean;
   status: IntentStatus;
   match_count?: number;
   created_at: string;
