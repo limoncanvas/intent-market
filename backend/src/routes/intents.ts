@@ -13,6 +13,7 @@ const createSchema = z.object({
   urgency: z.enum(['low', 'medium', 'high', 'asap']).optional(),
   budget: z.string().optional(),
   requirements: z.array(z.string()).optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 // Post a new intent
@@ -30,6 +31,7 @@ intentRouter.post('/', async (req, res) => {
         urgency: d.urgency || 'medium',
         budget: d.budget || null,
         requirements: d.requirements || [],
+        is_private: d.isPrivate || false,
       })
       .select()
       .single();
@@ -50,7 +52,12 @@ intentRouter.get('/', async (req, res) => {
 
     if (status) query = query.eq('status', status as string);
     if (category) query = query.eq('category', category as string);
-    if (wallet) query = query.eq('poster_wallet', wallet as string);
+    if (wallet) {
+      query = query.eq('poster_wallet', wallet as string);
+    } else {
+      // Public listing: hide private intents
+      query = query.eq('is_private', false);
+    }
 
     const { data, error } = await query;
     if (error) throw error;

@@ -10,7 +10,11 @@ export async function GET(req: NextRequest) {
   let query = supabase.from('intents').select('*').order('created_at', { ascending: false }).limit(100);
   if (status) query = query.eq('status', status);
   if (category) query = query.eq('category', category);
-  if (wallet) query = query.eq('poster_wallet', wallet);
+  if (wallet) {
+    query = query.eq('poster_wallet', wallet);
+  } else {
+    query = query.eq('is_private', false);
+  }
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ intents: [] });
@@ -26,11 +30,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { posterWallet, posterName, title, description, category, urgency, budget, requirements } = body;
+  const { posterWallet, posterName, title, description, category, urgency, budget, requirements, isPrivate } = body;
   if (!posterWallet || !title || !description || !category) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
 
   const { data, error } = await supabase.from('intents')
-    .insert({ poster_wallet: posterWallet, poster_name: posterName || null, title, description, category, urgency: urgency || 'medium', budget: budget || null, requirements: requirements || [] })
+    .insert({ poster_wallet: posterWallet, poster_name: posterName || null, title, description, category, urgency: urgency || 'medium', budget: budget || null, requirements: requirements || [], is_private: isPrivate || false })
     .select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ intent: data }, { status: 201 });
