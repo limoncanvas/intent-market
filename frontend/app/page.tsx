@@ -103,16 +103,21 @@ export default function Home() {
     <Shell wallet={<WalletMultiButton />} onNav={setView} connected={connected} toast={toast} stats={stats}>
       <div className="max-w-4xl mx-auto py-16 md:py-24 animate-slide-up">
         {/* Hero */}
-        <div className="text-center mb-16">
-          <div className="mb-8 inline-block border-4 border-white px-4 py-2 animate-pulse-border">
-            <span className="text-xs font-black tracking-widest">SOLANA AI AGENT HACKATHON</span>
+        <div className="text-center mb-16 relative">
+          <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+            <div className="text-[20rem] font-black leading-none">AI</div>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-[0.95] tracking-tight uppercase">
-            POST YOUR INTENT.<br/>AGENTS FIND THE MATCH.
-          </h1>
-          <p className="text-base md:text-lg mb-12 max-w-2xl mx-auto opacity-60">
-            First encrypted intent marketplace. Describe what you need — a co-founder, a developer, a service — AI agents match you privately.
-          </p>
+          <div className="relative">
+            <div className="mb-8 inline-block border-4 border-white px-4 py-2 animate-pulse-border scan-line">
+              <span className="text-xs font-black tracking-widest">SOLANA AI AGENT HACKATHON</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black mb-6 leading-[0.95] tracking-tight uppercase glow-text">
+              POST YOUR INTENT.<br/>AGENTS FIND THE MATCH.
+            </h1>
+            <p className="text-base md:text-lg mb-12 max-w-2xl mx-auto opacity-60">
+              First encrypted intent marketplace. Describe what you need — a co-founder, a developer, a service — AI agents match you privately.
+            </p>
+          </div>
 
           {connected ? (
             <div className="max-w-2xl mx-auto mb-8">
@@ -152,10 +157,11 @@ export default function Home() {
 
           <button
             onClick={() => { loadIntents(); setView('my-intents') }}
-            className="border-2 border-white px-8 py-4 hover:bg-white hover:text-black transition-all font-black text-xs tracking-widest hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+            className="border-2 border-white px-8 py-4 hover:bg-white hover:text-black transition-all duration-300 font-black text-xs tracking-widest hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] scan-line"
           >
             BROWSE ALL INTENTS →
           </button>
+          </div>
         </div>
 
         {/* How it works */}
@@ -176,12 +182,29 @@ export default function Home() {
           ))}
         </div>
 
+        {/* Live Stats */}
+        {stats && (stats.agents > 0 || stats.intents > 0 || stats.matches > 0) && (
+          <div className="grid grid-cols-3 gap-4 mb-16">
+            {[
+              { label: 'AGENTS', value: stats.agents, icon: '🤖' },
+              { label: 'INTENTS', value: stats.intents, icon: '⚡' },
+              { label: 'MATCHES', value: stats.matches, icon: '✨' },
+            ].map((stat, i) => (
+              <div key={i} className="border-4 border-white p-6 text-center relative overflow-hidden group hover:bg-white hover:text-black transition-all duration-300" style={{ animationDelay: `${i * 50}ms` }}>
+                <div className="absolute top-2 right-2 text-4xl opacity-5 group-hover:opacity-10">{stat.icon}</div>
+                <div className="text-4xl md:text-5xl font-black mb-2 glow-text">{stat.value}</div>
+                <div className="text-xs font-black tracking-widest opacity-50 group-hover:opacity-100">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Recent intents */}
         {intents.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black tracking-tight">RECENT INTENTS</h2>
-              <button onClick={() => { loadIntents(); setView('my-intents') }} className="text-xs font-black tracking-widest hover:underline">
+              <button onClick={() => { loadIntents(); setView('my-intents') }} className="text-xs font-black tracking-widest hover:underline opacity-70 hover:opacity-100 transition-opacity">
                 VIEW ALL →
               </button>
             </div>
@@ -214,7 +237,10 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-xs font-black tracking-widest">LOADING...</div>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="border-4 border-white w-16 h-16 mb-4 animate-pulse"></div>
+            <div className="text-xs font-black tracking-widest animate-pulse">LOADING...</div>
+          </div>
         ) : intents.length === 0 ? (
           <div className="text-center py-20">
             <h3 className="text-xl font-black mb-2">NO INTENTS YET</h3>
@@ -305,14 +331,17 @@ export default function Home() {
           <button
             onClick={() => triggerAutoMatch(selectedIntent.id)}
             disabled={matchLoading}
-            className="border-2 border-white px-6 py-3 hover:bg-white hover:text-black disabled:opacity-30 transition-all font-black text-xs tracking-widest"
+            className="border-4 border-white px-6 py-3 hover:bg-white hover:text-black disabled:opacity-30 transition-all duration-300 font-black text-xs tracking-widest scan-line hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
           >
-            {matchLoading ? 'FINDING...' : '⚡ FIND MATCHES'}
+            {matchLoading ? '⚡ FINDING...' : '⚡ FIND MATCHES'}
           </button>
         </div>
 
         {matchLoading && matches.length === 0 ? (
-          <div className="text-center py-12 text-xs font-black tracking-widest opacity-50">LOADING MATCHES...</div>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="border-4 border-white w-12 h-12 mb-4 animate-pulse"></div>
+            <div className="text-xs font-black tracking-widest opacity-50 animate-pulse">FINDING MATCHES...</div>
+          </div>
         ) : matches.length === 0 ? (
           <div className="text-center py-12 border-2 border-white">
             <p className="opacity-50 text-sm">NO MATCHES YET</p>
