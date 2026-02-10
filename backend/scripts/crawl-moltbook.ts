@@ -5,13 +5,17 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import * as dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 // Configuration
 const MOLTBOOK_API = 'https://www.moltbook.com/api/v1'
 const MOLTBOOK_API_KEY = process.env.MOLTBOOK_API_KEY || ''
 
 const SUPABASE_URL = process.env.SUPABASE_URL || ''
-const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || ''
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_KEY || ''
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 

@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate": "tsx src/db/migrate.ts",
-    "crawl:moltbook": "tsx scripts/crawl-moltbook.ts"
+    "crawl:moltbook": "tsx scripts/crawl-moltbook.ts",
+    "register:moltbook": "tsx scripts/register-moltbook.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
