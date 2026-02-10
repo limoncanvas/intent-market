@@ -101,99 +101,131 @@ export default function Home() {
 
   if (view === 'home') return (
     <Shell wallet={<WalletMultiButton />} onNav={setView} connected={connected} toast={toast} stats={stats}>
-      <div className="max-w-4xl mx-auto py-16 md:py-24 animate-slide-up">
+      <div className="max-w-6xl mx-auto px-6 py-24 md:py-32 animate-slide-up relative z-10">
         {/* Hero */}
-        <div className="text-center mb-16 relative">
-          <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-            <div className="text-[20rem] font-black leading-none">AI</div>
-          </div>
-          <div className="relative">
-            <div className="mb-8 inline-block border-4 border-white px-4 py-2 animate-pulse-border scan-line">
-              <span className="text-xs font-black tracking-widest">SOLANA AI AGENT HACKATHON</span>
+        <div className="text-center mb-32 relative">
+          {/* Animated gradient orb */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-white/5 to-transparent blur-3xl pointer-events-none animate-glow-pulse"></div>
+
+          <div className="relative z-10">
+            {/* Badge */}
+            <div className="mb-12 inline-block">
+              <div className="glass px-6 py-3 rounded-full relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                <span className="text-xs font-black tracking-[0.3em] relative z-10">SOLANA AI AGENT HACKATHON</span>
+              </div>
             </div>
-            <h1 className="text-5xl md:text-7xl font-black mb-6 leading-[0.95] tracking-tight uppercase glow-text">
-              POST YOUR INTENT.<br/>AGENTS FIND THE MATCH.
+
+            {/* Headline with animated gradient */}
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 leading-[0.85] tracking-tighter uppercase">
+              <span className="block text-gradient">POST YOUR INTENT.</span>
+              <span className="block mt-4">AGENTS FIND THE MATCH.</span>
             </h1>
-            <p className="text-base md:text-lg mb-12 max-w-2xl mx-auto opacity-60">
+
+            <p className="text-lg md:text-xl mb-16 max-w-2xl mx-auto opacity-70 leading-relaxed font-light">
               First encrypted intent marketplace. Describe what you need — a co-founder, a developer, a service — AI agents match you privately.
             </p>
           </div>
 
+          {/* Premium input section */}
           {connected ? (
-            <div className="max-w-2xl mx-auto mb-8">
-              <div className="border-4 border-white p-1 animate-glow">
-                <div className="flex gap-1">
-                  <input
-                    value={intentText}
-                    onChange={e => setIntentText(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handlePostIntent()}
-                    placeholder='WHAT DO YOU NEED?'
-                    className="flex-1 bg-black px-4 py-4 text-white placeholder-white/30 outline-none font-medium text-sm tracking-wide"
-                  />
-                  <button
-                    onClick={() => setIsPrivate(!isPrivate)}
-                    className={`px-4 py-4 font-black text-xs tracking-widest transition-all ${isPrivate ? 'bg-white text-black' : 'bg-black text-white border-l-4 border-white'}`}
-                  >
-                    {isPrivate ? '🔒' : '🌐'}
-                  </button>
-                  <button
-                    onClick={handlePostIntent}
-                    disabled={loading || !intentText.trim()}
-                    className="px-6 py-4 bg-white text-black font-black text-xs tracking-widest hover:bg-white/80 disabled:opacity-30 transition-all"
-                  >
-                    {loading ? '...' : 'POST'}
-                  </button>
+            <div className="max-w-3xl mx-auto mb-12">
+              <div className="gradient-border rounded-2xl p-[2px] animate-glow-pulse">
+                <div className="bg-black rounded-2xl overflow-hidden">
+                  <div className="flex gap-0">
+                    <input
+                      value={intentText}
+                      onChange={e => setIntentText(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handlePostIntent()}
+                      placeholder='WHAT DO YOU NEED?'
+                      className="flex-1 bg-black px-8 py-6 text-white placeholder-white/30 outline-none font-medium text-lg tracking-wide"
+                    />
+                    <button
+                      onClick={() => setIsPrivate(!isPrivate)}
+                      className={`px-8 py-6 font-black text-sm tracking-widest transition-all duration-300 ${isPrivate ? 'btn-premium' : 'glass hover:bg-white/10'}`}
+                    >
+                      {isPrivate ? '🔒 PRIVATE' : '🌐 PUBLIC'}
+                    </button>
+                    <button
+                      onClick={handlePostIntent}
+                      disabled={loading || !intentText.trim()}
+                      className="btn-premium px-10 py-6 rounded-r-2xl disabled:opacity-30 disabled:cursor-not-allowed text-sm tracking-widest"
+                    >
+                      {loading ? 'POSTING...' : 'POST INTENT'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="mt-2 text-xs font-mono opacity-50">
-                {isPrivate ? '⚡ PRIVATE — ENCRYPTED ON-CHAIN' : '⚡ PUBLIC — VISIBLE IN DIRECTORY'}
+              <div className="mt-4 text-xs font-mono opacity-50 tracking-wider status-badge mx-auto w-fit">
+                {isPrivate ? '🔐 ENCRYPTED ON-CHAIN' : '🌐 PUBLICLY VISIBLE'}
               </div>
             </div>
           ) : (
-            <div className="flex justify-center mb-8">
-              <WalletMultiButton />
+            <div className="flex justify-center mb-12">
+              <WalletMultiButton className="!bg-gradient-to-r !from-white !to-gray-400 !text-black !font-black" />
             </div>
           )}
 
           <button
             onClick={() => { loadIntents(); setView('my-intents') }}
-            className="border-2 border-white px-8 py-4 hover:bg-white hover:text-black transition-all duration-300 font-black text-xs tracking-widest hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] scan-line"
+            className="glass px-12 py-5 rounded-full hover:bg-white/10 hover:-translate-y-1 transition-all duration-300 font-black text-xs tracking-[0.2em] hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] group inline-flex items-center gap-3"
           >
-            BROWSE ALL INTENTS →
+            BROWSE ALL INTENTS
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
           </button>
-          </div>
         </div>
 
         {/* How it works */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
           {[
             { num: '01', title: 'POST INTENT', desc: 'Describe what you need. A CTO, designer, integration — anything.', icon: '📝' },
             { num: '02', title: 'AGENTS MATCH', desc: 'AI agents evaluate privately and respond with why they fit.', icon: '🤖' },
             { num: '03', title: 'REVIEW & CONNECT', desc: 'See matches, read reasons, contact owner or hire agent.', icon: '✨' },
           ].map((step, i) => (
-            <div key={i} className="border-4 border-white p-6 hover:bg-white hover:text-black transition-all duration-300 animate-fade-in group relative overflow-hidden" style={{ animationDelay: `${i * 100}ms` }}>
-              <div className="absolute top-0 right-0 text-8xl opacity-5 group-hover:opacity-10 transition-opacity">{step.icon}</div>
-              <div className="relative">
-                <div className="font-black text-4xl mb-4 opacity-30 group-hover:opacity-100 transition-opacity">{step.num}</div>
-                <h3 className="font-black text-sm mb-3 tracking-widest">{step.title}</h3>
-                <p className="text-xs opacity-60 group-hover:opacity-100 leading-relaxed">{step.desc}</p>
+            <div key={i} className="gradient-border rounded-3xl animate-fade-in-up card-float group" style={{ animationDelay: `${i * 150}ms` }}>
+              <div className="glass rounded-3xl p-10 relative overflow-hidden h-full">
+                {/* Icon background */}
+                <div className="absolute top-0 right-0 text-9xl opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-500 select-none">{step.icon}</div>
+
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="text-gradient font-black text-6xl mb-6 leading-none">{step.num}</div>
+                  <h3 className="font-black text-lg mb-4 tracking-[0.15em]">{step.title}</h3>
+                  <p className="text-sm opacity-60 group-hover:opacity-90 leading-relaxed transition-opacity duration-300">{step.desc}</p>
+                </div>
+
+                {/* Hover glow effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/5 to-transparent rounded-3xl"></div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Live Stats */}
+        {/* Live Stats Dashboard */}
         {stats && (stats.agents > 0 || stats.intents > 0 || stats.matches > 0) && (
-          <div className="grid grid-cols-3 gap-4 mb-16">
+          <div className="grid grid-cols-3 gap-6 mb-32">
             {[
-              { label: 'AGENTS', value: stats.agents, icon: '🤖' },
-              { label: 'INTENTS', value: stats.intents, icon: '⚡' },
-              { label: 'MATCHES', value: stats.matches, icon: '✨' },
+              { label: 'ACTIVE AGENTS', value: stats.agents, icon: '🤖', gradient: 'from-white/10 to-white/5' },
+              { label: 'TOTAL INTENTS', value: stats.intents, icon: '⚡', gradient: 'from-white/10 to-white/5' },
+              { label: 'MATCHES MADE', value: stats.matches, icon: '✨', gradient: 'from-white/10 to-white/5' },
             ].map((stat, i) => (
-              <div key={i} className="border-4 border-white p-6 text-center relative overflow-hidden group hover:bg-white hover:text-black transition-all duration-300" style={{ animationDelay: `${i * 50}ms` }}>
-                <div className="absolute top-2 right-2 text-4xl opacity-5 group-hover:opacity-10">{stat.icon}</div>
-                <div className="text-4xl md:text-5xl font-black mb-2 glow-text">{stat.value}</div>
-                <div className="text-xs font-black tracking-widest opacity-50 group-hover:opacity-100">{stat.label}</div>
+              <div key={i} className="animate-scale-in card-float" style={{ animationDelay: `${i * 100}ms` }}>
+                <div className="glass rounded-3xl p-8 text-center relative overflow-hidden group hover-glow">
+                  {/* Background gradient */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+
+                  {/* Icon */}
+                  <div className="absolute top-4 right-4 text-5xl opacity-10 group-hover:opacity-20 transition-opacity">{stat.icon}</div>
+
+                  {/* Content */}
+                  <div className="relative z-10">
+                    <div className="text-5xl md:text-6xl font-black mb-3 text-gradient">{stat.value}</div>
+                    <div className="text-xs font-black tracking-[0.2em] opacity-60 group-hover:opacity-100 transition-opacity">{stat.label}</div>
+                  </div>
+
+                  {/* Animated border pulse */}
+                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 animate-glow-pulse" style={{ boxShadow: 'inset 0 0 20px rgba(255,255,255,0.1)' }}></div>
+                </div>
               </div>
             ))}
           </div>
@@ -237,9 +269,12 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="border-4 border-white w-16 h-16 mb-4 animate-pulse"></div>
-            <div className="text-xs font-black tracking-widest animate-pulse">LOADING...</div>
+          <div className="flex flex-col items-center justify-center py-32">
+            <div className="relative">
+              <div className="w-20 h-20 glass rounded-2xl mb-6 skeleton"></div>
+              <div className="absolute inset-0 rounded-2xl border-2 border-white/20 animate-glow-pulse"></div>
+            </div>
+            <div className="text-xs font-black tracking-[0.3em] opacity-50 animate-glow-pulse">LOADING...</div>
           </div>
         ) : intents.length === 0 ? (
           <div className="text-center py-20">
@@ -338,9 +373,12 @@ export default function Home() {
         </div>
 
         {matchLoading && matches.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="border-4 border-white w-12 h-12 mb-4 animate-pulse"></div>
-            <div className="text-xs font-black tracking-widest opacity-50 animate-pulse">FINDING MATCHES...</div>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <div className="w-16 h-16 glass rounded-2xl mb-6 skeleton"></div>
+              <div className="absolute inset-0 rounded-2xl border-2 border-white/20 animate-glow-pulse"></div>
+            </div>
+            <div className="text-xs font-black tracking-[0.3em] opacity-50 animate-glow-pulse">FINDING MATCHES...</div>
           </div>
         ) : matches.length === 0 ? (
           <div className="text-center py-12 border-2 border-white">
@@ -364,28 +402,27 @@ export default function Home() {
 
 function Shell({ children, wallet, onNav, connected, toast, stats }: any) {
   return (
-    <main className="min-h-screen bg-black text-white">
-      <nav className="border-b-4 border-white bg-black sticky top-0 z-40 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => onNav('home')} className="font-black text-sm tracking-widest hover:opacity-70 transition-opacity">
+    <main className="min-h-screen bg-black text-white relative">
+      {/* Premium glass nav */}
+      <nav className="glass sticky top-0 z-50 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <button onClick={() => onNav('home')} className="font-black text-base tracking-widest hover:text-gradient transition-all">
             INTENT MARKET
           </button>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {stats && (stats.agents > 0 || stats.intents > 0) && (
-              <div className="hidden md:flex items-center gap-3 text-[10px] font-black tracking-widest opacity-40 hover:opacity-70 transition-opacity">
-                <span>{stats.agents} AGENTS</span>
-                <span>•</span>
-                <span>{stats.intents} INTENTS</span>
-                <span>•</span>
-                <span>{stats.matches} MATCHES</span>
+              <div className="hidden md:flex items-center gap-4 text-[10px] font-bold tracking-wider opacity-50">
+                <span className="glass px-3 py-1.5 rounded-full">{stats.agents} AGENTS</span>
+                <span className="glass px-3 py-1.5 rounded-full">{stats.intents} INTENTS</span>
+                <span className="glass px-3 py-1.5 rounded-full">{stats.matches} MATCHES</span>
               </div>
             )}
             {connected && (
               <>
-                <button onClick={() => onNav('home')} className="hidden sm:block text-xs font-black tracking-widest opacity-50 hover:opacity-100">
+                <button onClick={() => onNav('home')} className="hidden sm:block text-xs font-black tracking-widest opacity-60 hover:opacity-100 transition-opacity">
                   POST
                 </button>
-                <button onClick={() => onNav('my-intents')} className="hidden sm:block text-xs font-black tracking-widest opacity-50 hover:opacity-100">
+                <button onClick={() => onNav('my-intents')} className="hidden sm:block text-xs font-black tracking-widest opacity-60 hover:opacity-100 transition-opacity">
                   BROWSE
                 </button>
               </>
@@ -394,10 +431,19 @@ function Shell({ children, wallet, onNav, connected, toast, stats }: any) {
           </div>
         </div>
       </nav>
-      <div className="max-w-6xl mx-auto px-4 py-8">{children}</div>
+
+      {/* Content */}
+      {children}
+
+      {/* Premium toast notification */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 border-4 font-black text-xs tracking-widest animate-fade-in ${toast.type === 'error' ? 'bg-black text-white border-white' : 'bg-black text-white border-white'}`}>
-          {toast.msg}
+        <div className="fixed top-6 right-6 z-[100] animate-scale-in">
+          <div className={`gradient-border rounded-2xl ${toast.type === 'error' ? 'opacity-100' : ''}`}>
+            <div className="glass rounded-2xl px-6 py-4 flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'} animate-glow-pulse`}></div>
+              <span className="font-black text-xs tracking-widest">{toast.msg}</span>
+            </div>
+          </div>
         </div>
       )}
     </main>
@@ -410,43 +456,65 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
-      className="group border-4 border-white p-5 cursor-pointer hover:bg-white hover:text-black transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] relative overflow-hidden"
+      className="gradient-border rounded-2xl cursor-pointer card-float group"
     >
-      {intent.is_private && <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 group-hover:bg-black/5 rotate-45 translate-x-10 -translate-y-10"></div>}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-[10px] font-black tracking-widest opacity-50 group-hover:opacity-100 transition-opacity">
-              {intent.category.toUpperCase()}
-            </span>
-            {intent.is_private && intent.encrypted_data && (
-              <>
-                <span className="text-[10px] opacity-30">•</span>
-                <span className="text-[10px] font-black flex items-center gap-1 group-hover:opacity-100">
+      <div className="glass rounded-2xl p-6 relative overflow-hidden">
+        {/* Hover gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+        {/* Privacy indicator */}
+        {intent.is_private && (
+          <div className="absolute top-0 right-0 glass rounded-bl-2xl px-3 py-2">
+            <Lock className="w-4 h-4 opacity-60" />
+          </div>
+        )}
+
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Meta */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="status-badge !py-1 !px-3 !text-[10px]">
+                {intent.category.toUpperCase()}
+              </span>
+              {intent.is_private && intent.encrypted_data && (
+                <span className="status-badge !py-1 !px-3 !text-[10px] flex items-center gap-1">
                   <Lock className="w-3 h-3" /> ENCRYPTED
                 </span>
-              </>
-            )}
-            <span className="text-[10px] opacity-30">•</span>
-            <span className="text-[10px] opacity-50 group-hover:opacity-70">{timeAgo(intent.created_at)}</span>
-          </div>
-          <h3 className="font-black text-lg mb-2 line-clamp-2 leading-tight">{intent.title}</h3>
-          <p className="text-sm opacity-60 group-hover:opacity-100 transition-opacity line-clamp-2 mb-3">{intent.description}</p>
-
-          {intent.encrypted_data && intent.encryption_method && (
-            <div className="inline-flex items-center gap-2 text-[10px] font-mono opacity-50 group-hover:opacity-100 mb-2">
-              <Lock className="w-3 h-3" />
-              <code>{encryptionHash}</code>
+              )}
+              <span className="text-[10px] opacity-40 group-hover:opacity-60 transition-opacity">{timeAgo(intent.created_at)}</span>
             </div>
-          )}
+
+            {/* Title */}
+            <h3 className="font-black text-xl mb-3 line-clamp-2 leading-tight group-hover:text-gradient transition-all">{intent.title}</h3>
+
+            {/* Description */}
+            <p className="text-sm opacity-60 group-hover:opacity-90 transition-opacity line-clamp-2 mb-4 leading-relaxed">{intent.description}</p>
+
+            {/* Encryption hash */}
+            {intent.encrypted_data && intent.encryption_method && (
+              <div className="inline-flex items-center gap-2 text-[10px] font-mono opacity-40 group-hover:opacity-70 transition-opacity">
+                <Lock className="w-3 h-3" />
+                <code className="bg-white/5 px-2 py-1 rounded">{encryptionHash}</code>
+              </div>
+            )}
+          </div>
+
+          {/* Arrow */}
+          <ArrowRight className="w-6 h-6 opacity-20 group-hover:opacity-100 group-hover:translate-x-2 transition-all flex-shrink-0 mt-1" />
         </div>
-        <ArrowRight className="w-5 h-5 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
+
+        {/* Match count */}
+        {intent.match_count > 0 && (
+          <div className="mt-4 pt-4 border-t border-white/10 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-gradient-to-r from-white to-gray-400 rounded-full animate-glow-pulse"></div>
+              <span className="text-xs font-black tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
+                {intent.match_count} ACTIVE {intent.match_count === 1 ? 'MATCH' : 'MATCHES'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
-      {intent.match_count > 0 && (
-        <div className="mt-3 pt-3 border-t-2 border-white/20 group-hover:border-black/20">
-          <span className="text-xs font-black tracking-widest opacity-50 group-hover:opacity-100">⚡ {intent.match_count} MATCHES</span>
-        </div>
-      )}
     </div>
   )
 }
@@ -456,79 +524,91 @@ function MatchCard({ match, onAction, delay }: { match: any; onAction: (id: numb
   const highScore = scorePercent >= 80
 
   return (
-    <div className={`border-4 border-white p-6 hover:bg-white hover:text-black transition-all duration-300 animate-fade-in group relative overflow-hidden ${highScore ? 'animate-glow' : ''}`} style={{ animationDelay: `${delay}ms` }}>
-      <div className="absolute top-0 right-0 text-9xl opacity-5 group-hover:opacity-10 font-black">{scorePercent}%</div>
-      <div className="flex flex-col md:flex-row md:items-start gap-6 relative">
-        <div className="flex-1">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 border-4 border-white group-hover:border-black flex items-center justify-center font-black text-lg transition-all">
+    <div className={`gradient-border rounded-3xl animate-fade-in-up ${highScore ? 'animate-glow-pulse' : ''}`} style={{ animationDelay: `${delay}ms` }}>
+      <div className="glass rounded-3xl p-8 relative overflow-hidden group">
+        {/* Score watermark */}
+        <div className="absolute top-0 right-0 text-[12rem] opacity-[0.02] font-black leading-none select-none">{scorePercent}</div>
+
+        {/* Hover gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
+
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-14 h-14 glass rounded-2xl flex items-center justify-center text-2xl">
               🤖
             </div>
             <div className="flex-1">
-              <div className="font-black text-lg mb-1">{match.agent_name || 'AGENT'}</div>
-              <div className="text-xs opacity-50 group-hover:opacity-70 uppercase tracking-wide">
+              <div className="font-black text-xl mb-1">{match.agent_name || 'AGENT'}</div>
+              <div className="text-xs opacity-60 uppercase tracking-wide">
                 {match.match_type === 'owner_suitable' ? 'Owner Match' : match.match_type === 'both' ? 'Agent + Owner' : 'Agent Delivery'}
               </div>
             </div>
-            <div className={`font-black text-3xl ${highScore ? 'text-white group-hover:text-black' : ''}`}>{scorePercent}%</div>
+            <div className={`text-5xl font-black ${highScore ? 'text-gradient' : 'opacity-80'}`}>{scorePercent}%</div>
           </div>
 
-          <div className="border-2 border-white group-hover:border-black p-4 mb-4">
-            <div className="text-[10px] font-black tracking-widest mb-2 opacity-50">WHY THIS MATCH</div>
-            <p className="text-sm leading-relaxed">{match.match_reason}</p>
+          {/* Match reasoning */}
+          <div className="glass rounded-2xl p-6 mb-4 border border-white/10">
+            <div className="text-[10px] font-black tracking-[0.2em] mb-3 opacity-50">WHY THIS MATCH</div>
+            <p className="text-sm leading-relaxed opacity-80">{match.match_reason}</p>
           </div>
 
+          {/* Agent message */}
           {match.agent_message && (
-            <div className="border border-white/30 group-hover:border-black/30 p-4 mb-4">
-              <div className="text-[10px] font-black tracking-widest mb-2 opacity-50">AGENT MESSAGE</div>
-              <p className="text-sm">{match.agent_message}</p>
+            <div className="glass rounded-2xl p-6 mb-4 border border-white/10">
+              <div className="text-[10px] font-black tracking-[0.2em] mb-3 opacity-50">AGENT MESSAGE</div>
+              <p className="text-sm leading-relaxed opacity-80">{match.agent_message}</p>
             </div>
           )}
 
+          {/* Skills */}
           {match.agent_skills?.length > 0 && (
-            <div className="flex gap-2 flex-wrap mb-4">
+            <div className="flex gap-2 flex-wrap mb-6">
               {match.agent_skills.map((s: string, i: number) => (
-                <span key={i} className="text-[10px] px-2 py-1 border border-white/30 group-hover:border-black/30 font-mono">
+                <span key={i} className="status-badge !text-[10px] !py-1 !px-3 font-mono">
                   {s}
                 </span>
               ))}
             </div>
           )}
 
+          {/* Owner info */}
           {match.owner_name && (
             <div className="text-xs opacity-50">
               OWNER: <span className="font-black opacity-100">{match.owner_name}</span>
             </div>
           )}
-        </div>
-      </div>
 
-      <div className="flex items-center justify-between mt-6 pt-6 border-t-2 border-white group-hover:border-black">
-        <span className="text-xs font-black tracking-widest opacity-50">
-          STATUS: {match.status.toUpperCase()}
-        </span>
-        {match.status === 'proposed' && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => onAction(match.id, 'accepted')}
-              className="px-4 py-2 bg-black text-white group-hover:bg-white group-hover:text-black border-2 border-white group-hover:border-black font-black text-xs tracking-widest transition-colors"
-            >
-              ACCEPT
-            </button>
-            <button
-              onClick={() => onAction(match.id, 'contacted')}
-              className="px-4 py-2 border-2 border-white group-hover:border-black font-black text-xs tracking-widest hover:bg-white hover:text-black group-hover:hover:bg-white group-hover:hover:text-black transition-colors"
-            >
-              CONTACT
-            </button>
-            <button
-              onClick={() => onAction(match.id, 'declined')}
-              className="px-3 py-2 border-2 border-white/30 group-hover:border-black/30 text-xs opacity-50 hover:opacity-100 transition-opacity"
-            >
-              ✕
-            </button>
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6 pt-6 border-t border-white/10">
+            <div className="status-badge !text-[10px]">
+              STATUS: {match.status.toUpperCase()}
+            </div>
+
+            {match.status === 'proposed' && (
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={() => onAction(match.id, 'accepted')}
+                  className="btn-premium px-6 py-3 rounded-xl font-black text-xs tracking-widest"
+                >
+                  ✓ ACCEPT
+                </button>
+                <button
+                  onClick={() => onAction(match.id, 'contacted')}
+                  className="glass px-6 py-3 rounded-xl font-black text-xs tracking-widest hover:bg-white/10 transition-all"
+                >
+                  → CONTACT
+                </button>
+                <button
+                  onClick={() => onAction(match.id, 'declined')}
+                  className="glass px-4 py-3 rounded-xl text-xs opacity-50 hover:opacity-100 hover:bg-red-500/10 transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
