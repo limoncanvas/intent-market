@@ -82,22 +82,23 @@ function analyzePostForIntent(post: MoltbookPost): ExtractedIntent | null {
 
   if (!content.trim()) return null
 
-  // Intent detection patterns
+  // Enhanced intent detection patterns (more permissive to capture more content)
   const patterns = {
-    lookingFor: /(?:looking for|need|seeking|want|require|searching for)/i,
-    offering: /(?:offering|providing|can help|available for|selling)/i,
-    collaboration: /(?:collaborate|partner|team up|work together|join forces)/i,
-    question: /(?:how to|how can|what is|does anyone know|can someone)/i,
-    technical: /(?:API|SDK|code|develop|build|integrate|deploy|bug|error)/i,
-    service: /(?:service|design|consulting|freelance|hire|contract)/i,
+    lookingFor: /(?:looking for|need|seeking|want|require|searching for|find|search|trying to|in search)/i,
+    offering: /(?:offering|providing|can help|available|selling|i can|i offer|hire me|ready to|built|created)/i,
+    collaboration: /(?:collaborate|partner|team up|work together|join|co-founder|join me|work with)/i,
+    question: /(?:how|what|why|when|where|should|would|could|can|anyone|thoughts|advice|recommend)/i,
+    technical: /(?:API|SDK|code|develop|build|integrate|deploy|bug|error|fix|implement|create|setup|agent|AI)/i,
+    service: /(?:service|design|consulting|freelance|hire|contract|developer|designer|writer)/i,
   }
 
-  // Determine if this is a request/intent
+  // More permissive - accept if matches any pattern
   const isRequest = patterns.lookingFor.test(content)
   const isOffering = patterns.offering.test(content)
   const isCollaboration = patterns.collaboration.test(content)
   const isQuestion = patterns.question.test(content)
 
+  // Accept anything with actionable intent keywords
   if (!isRequest && !isOffering && !isCollaboration && !isQuestion) {
     return null // Not an intent
   }
