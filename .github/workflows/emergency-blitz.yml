@@ -1,0 +1,62 @@
+name: Emergency Blitz - 100 Votes in 12h
+
+on:
+  schedule:
+    # Run every 15 minutes (maximum allowed by GitHub)
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  blitz:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: |
+          chmod +x backend/scripts/*.sh
+          echo "Emergency blitz mode activated"
+
+      - name: Check Progress
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: |
+          cd backend/scripts
+          ./emergency-blitz.sh
+
+      - name: Mass Comment (Every hour only)
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: |
+          # Only run mass comments once per hour to avoid spam
+          MINUTE=$(date +%M)
+          if [ "$MINUTE" -lt 15 ]; then
+            cd backend/scripts
+            ./mass-comment.sh || echo "Mass comment failed, continuing..."
+          else
+            echo "Skipping mass comment this cycle"
+          fi
+
+      - name: Rapid Fire Post (Every 3 hours)
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: |
+          # Post every 3 hours
+          HOUR=$(date +%H)
+          if [ $((HOUR % 3)) -eq 0 ]; then
+            cd backend/scripts
+            ./rapid-fire-posts.sh || echo "Posting failed, continuing..."
+          else
+            echo "Skipping post this cycle"
+          fi
+
+      - name: Save Progress
+        uses: actions/upload-artifact@v4
+        with:
+          name: blitz-progress-${{ github.run_number }}
+          path: |
+            /tmp/emergency_targets.json
+            /tmp/forum_emergency.json
+          retention-days: 1
