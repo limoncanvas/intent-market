@@ -11,7 +11,11 @@ export async function GET() {
   };
 
   // Try to query database
-  let dbCheck = { success: false, error: null, count: 0 };
+  let dbCheck: { success: boolean; error: string | null; count: number } = {
+    success: false,
+    error: null,
+    count: 0
+  };
   try {
     const { data, error, count } = await supabase
       .from('intents')
