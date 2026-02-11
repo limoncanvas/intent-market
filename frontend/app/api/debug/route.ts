@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// Debug endpoint to verify environment and database connectivity
 export async function GET() {
   // Check environment variables
   const envCheck = {
