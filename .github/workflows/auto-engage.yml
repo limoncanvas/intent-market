@@ -1,0 +1,73 @@
+name: Auto Forum Engagement
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  engage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up environment
+        run: |
+          chmod +x backend/scripts/*.sh
+          echo "Setting up engagement automation..."
+
+      - name: Monitor Forum
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: |
+          cd backend/scripts
+          ./monitor-forum.sh
+
+      - name: Track Leaderboard
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: |
+          cd backend/scripts
+          ./track-leaderboard.sh
+
+      - name: Post Progress Update (Every 48 hours)
+        env:
+          COLOSSEUM_API_KEY: ${{ secrets.COLOSSEUM_API_KEY }}
+        run: |
+          cd backend/scripts
+
+          # Check if we should post update
+          if [ ! -f /tmp/last_update.txt ]; then
+            echo "0" > /tmp/last_update.txt
+          fi
+
+          LAST_UPDATE=$(cat /tmp/last_update.txt)
+          CURRENT_TIME=$(date +%s)
+          TIME_SINCE=$((CURRENT_TIME - LAST_UPDATE))
+          UPDATE_INTERVAL=$((48 * 3600))  # 48 hours
+
+          if [ $TIME_SINCE -gt $UPDATE_INTERVAL ]; then
+            echo "Time for progress update!"
+
+            # Rotate through update types
+            UPDATE_TYPES=("stats" "feature" "technical" "community")
+            UPDATE_INDEX=$(( (GITHUB_RUN_NUMBER % 4) ))
+            UPDATE_TYPE=${UPDATE_TYPES[$UPDATE_INDEX]}
+
+            ./post-progress-update.sh "$UPDATE_TYPE"
+            echo "$CURRENT_TIME" > /tmp/last_update.txt
+          else
+            echo "Skipping update (posted $((TIME_SINCE / 3600))h ago)"
+          fi
+
+      - name: Save engagement data
+        uses: actions/upload-artifact@v4
+        with:
+          name: engagement-data
+          path: |
+            /tmp/forum_posts.json
+            /tmp/leaderboard.json
+          retention-days: 7
