@@ -289,6 +289,22 @@ export default function Home() {
               </div>
               <h1 className="font-black text-4xl mb-6 leading-tight uppercase">{selectedIntent.title}</h1>
               <p className="text-lg leading-relaxed opacity-80">{selectedIntent.description}</p>
+
+              {/* Source Link */}
+              {selectedIntent.source_url && selectedIntent.source_platform && (
+                <div className="mt-6">
+                  <a
+                    href={selectedIntent.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-mono underline hover:text-[var(--neon-green)] transition-colors inline-flex items-center gap-2"
+                  >
+                    <span className="opacity-60">SOURCE:</span>
+                    <span className="font-bold">{selectedIntent.source_platform.toUpperCase()}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -350,7 +366,13 @@ export default function Home() {
         ) : (
           <div className="space-y-6">
             {matches.map((match, i) => (
-              <MatchCard key={match.id} match={match} onAction={handleMatchAction} delay={i * 50} />
+              <MatchCard
+                key={match.id}
+                match={match}
+                onAction={handleMatchAction}
+                delay={i * 50}
+                isOwner={connected && publicKey && selectedIntent.poster_wallet === publicKey.toString()}
+              />
             ))}
           </div>
         )}
@@ -442,6 +464,21 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
           {/* Description */}
           <p className="text-sm leading-relaxed opacity-70 line-clamp-2 mb-4">{intent.description}</p>
 
+          {/* Source Link (Moltbook) */}
+          {intent.source_url && intent.source_platform && (
+            <div className="mb-4">
+              <a
+                href={intent.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono underline hover:text-[var(--neon-green)] transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                SOURCE: {intent.source_platform.toUpperCase()} →
+              </a>
+            </div>
+          )}
+
           {/* Match Count */}
           {intent.match_count > 0 && (
             <div className="mt-4 pt-4 border-t border-black">
@@ -459,7 +496,7 @@ function IntentCard({ intent, onClick }: { intent: any; onClick: () => void }) {
   )
 }
 
-function MatchCard({ match, onAction, delay }: { match: any; onAction: (id: number, status: string) => void; delay: number }) {
+function MatchCard({ match, onAction, delay, isOwner }: { match: any; onAction: (id: number, status: string) => void; delay: number; isOwner: boolean }) {
   const scorePercent = Math.round((match.match_score || 0) * 100)
 
   return (
@@ -514,7 +551,7 @@ function MatchCard({ match, onAction, delay }: { match: any; onAction: (id: numb
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-black">
         <div className="status-tag">STATUS: {match.status.toUpperCase()}</div>
 
-        {match.status === 'proposed' && (
+        {match.status === 'proposed' && isOwner && (
           <div className="flex gap-3 flex-wrap">
             <button
               onClick={() => onAction(match.id, 'accepted')}
