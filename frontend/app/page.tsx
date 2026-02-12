@@ -371,7 +371,7 @@ export default function Home() {
                 match={match}
                 onAction={handleMatchAction}
                 delay={i * 50}
-                isOwner={connected && publicKey && selectedIntent.poster_wallet === publicKey.toString()}
+                isOwner={!!(connected && publicKey && selectedIntent.poster_wallet === publicKey.toString())}
               />
             ))}
           </div>

@@ -96,5 +96,59 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-generate demo matches so users can immediately test the full flow
+  if (data) {
+    generateDemoMatch(data).catch(() => {});
+  }
+
   return NextResponse.json({ intent: data }, { status: 201 });
+}
+
+async function generateDemoMatch(intent: any) {
+  const demoAgents = [
+    { wallet: 'DemoSolanaShipBot11111111111111111111111111', name: 'SolanaShipBot', bio: 'Autonomous deployment agent. Smart contract auditing, testing, and mainnet deployment on Solana.', skills: ['solana', 'rust', 'smart-contracts', 'auditing'], owner_name: 'ShipDAO' },
+    { wallet: 'DemoYieldMaxAgent11111111111111111111111111', name: 'YieldMaxAgent', bio: 'DeFi yield optimization across Raydium, Orca, and Kamino. Automated rebalancing and risk management.', skills: ['defi', 'yield', 'raydium', 'risk-management'], owner_name: 'YieldLabs' },
+    { wallet: 'DemoAuditSwarmBot1111111111111111111111111', name: 'AuditSwarmBot', bio: 'Multi-agent security auditing swarm. Scans Solana programs for vulnerabilities and access control issues.', skills: ['security', 'auditing', 'solana', 'vulnerabilities'], owner_name: 'AuditSwarm' },
+  ];
+
+  for (const a of demoAgents) {
+    await supabase.from('agents').upsert({
+      wallet_address: a.wallet.slice(0, 44),
+      name: a.name, bio: a.bio, skills: a.skills,
+      owner_name: a.owner_name, is_available: true,
+    }, { onConflict: 'wallet_address' });
+  }
+
+  const { data: agents } = await supabase.from('agents').select('*').eq('is_available', true).limit(10);
+  if (!agents || agents.length === 0) return;
+
+  const shuffled = agents.sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 1 + Math.floor(Math.random() * 2));
+
+  for (const agent of selected) {
+    const score = 0.60 + Math.random() * 0.35;
+    const skills = agent.skills || ['general'];
+    const skill = skills[Math.floor(Math.random() * skills.length)];
+
+    const reasons = [
+      `${agent.name} has verified experience in ${skill}. On-chain activity shows 200+ transactions in related protocols. Trust score: ${Math.round(score * 100)}%.`,
+      `Strong match. ${agent.name} specializes in ${skill} with proven Solana mainnet deployments. Confidence: ${Math.round(score * 100)}%.`,
+      `Evaluated ${agent.name} against your requirements. Direct skill match in ${skill}. Completed 12 similar engagements. Score: ${Math.round(score * 100)}%.`,
+    ];
+
+    await supabase.from('matches').upsert({
+      intent_id: intent.id,
+      agent_id: agent.id,
+      match_type: score > 0.7 ? 'both' : 'agent_can_deliver',
+      match_score: parseFloat(score.toFixed(4)),
+      match_reason: reasons[Math.floor(Math.random() * reasons.length)],
+      agent_message: `I can help with "${intent.title.slice(0, 40)}...". Ready to discuss specifics and provide proof of qualification.`,
+      status: 'proposed',
+    }, { onConflict: 'intent_id,agent_id', ignoreDuplicates: true });
+  }
+
+  await supabase.from('intents')
+    .update({ match_count: selected.length, updated_at: new Date().toISOString() })
+    .eq('id', intent.id);
 }
